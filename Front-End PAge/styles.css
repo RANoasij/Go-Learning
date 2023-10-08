@@ -1,0 +1,36 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#inputText {
+    margin-right: 10px;
+}
+
+#submitButton {
+    cursor: pointer;
+}
+
+@media screen and (max-width: 960px) { /* This will apply when the screen width is 1920px (1080p) or larger */
+    #inputText, #submitButton {
+        font-size: 2.00vw; /* Adjust this value to control how much the size scales with the screen size */
+    }
+}
+
+@media screen and (min-width: 961px) { /* This will apply when the screen width is 3840px (4K) or larger */
+    #inputText, #submitButton {
+        font-size: 4.00vw; /* Adjust this value to control how much the size scales with the screen size */
+    }
+}
+

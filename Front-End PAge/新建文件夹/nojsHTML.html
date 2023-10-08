@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-size: 16px; /* Base font-size for em calculations */
+        }
+
+        #inputText, #submitButton {
+            font-size: 2em; /* Adjust this to make the text larger or smaller */
+        }
+
+        @media screen and (max-width: 120em) { /* This will apply when the screen width is 1920px (120em) or smaller */
+            #inputText, #submitButton {
+                font-size: 3em; /* Adjust this value to control how much the size scales with the screen size */
+            }
+        }
+
+        @media screen and (min-width: 120.1em) { /* This will apply when the screen width is 1921px (120.1em) or larger */
+            #inputText, #submitButton {
+                font-size: 1.5em; /* Adjust this value to control how much the size scales with the screen size */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div>
+		<!-- your-backend-endpoint: https://127.0.0.1:1000 -->
+        <form action="https://127.0.0.1:1000" method="POST">
+            <input id="inputText" type="text" name="inputText">
+            <button id="submitButton" type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>
