@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hex Converter</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: space-between;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        .input-box {
+            width: 45%;
+            height: 80%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #000;
+        }
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 10%;
+        }
+        .buttons button {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="origin" class="input-box" placeholder="Original Text"></textarea>
+    <div class="buttons">
+        <button onclick="convertToHex()">Convert to Hex</button>
+        <button onclick="convertFromHex()">Convert from Hex</button>
+    </div>
+    <textarea id="hex" class="input-box" placeholder="Hexadecimal"></textarea>
+    <script>
+        function convertToHex() {
+            var origin = document.getElementById('origin').value;
+            var hex = '';
+            for (var i = 0; i < origin.length; i++) {
+                hex += '' + origin.charCodeAt(i).toString(16);
+            }
+            document.getElementById('hex').value = hex;
+        }
+        function convertFromHex() {
+            var hex = document.getElementById('hex').value;
+            var str = '';
+            for (var i = 0; i < hex.length; i += 2) {
+                str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+            }
+            document.getElementById('origin').value = str;
+        }
+    </script>
+</body>
+</html>
