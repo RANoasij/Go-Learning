@@ -49,8 +49,6 @@ func (s *Server) BroadCast(user *User, msg string) {
 	s.Message <- sendMsg                                     // 将消息发送到channel中
 }
 
-// Explain Handler function
-
 func (s *Server) Handler(conn net.Conn) { // conn is a socket 套接字作为形参
 	fmt.Println("连接建立成功")
 	// 发回给客户端
@@ -61,6 +59,25 @@ func (s *Server) Handler(conn net.Conn) { // conn is a socket 套接字作为形
 	s.mapLock.Unlock()            // 解锁
 	// 广播当前用户上线消息
 	s.BroadCast(user, "已上线")
+	// 接收客户端消息. 需要Read -> block of Socket. 用goroutine来处理，防止阻塞。go func(){}().
+	go func()  {	
+		buffer := make([]byte, 1700) // 如果大小写成宏，怎么写： const BUFFER_SIZE = 1024. buffer := make([]byte, BUFFER_SIZE)
+		for {
+			a, err := conn.Read(buffer) // 读取用户数据. a是读取到的字节数(长度)
+			if a == 0 { // 用户下线
+				s.BroadCast(user, "下线")
+				return
+			}
+			if err != nil && err != io.EOF { // io.EOF表示读取到文件末尾
+				fmt.Println("conn.Read err:", err)
+				return
+			}
+			// 提取用户的消息(去除'\n')
+			msg := string(buffer[:a-1]) // 从buffer中取出用户输入的消息
+			
+		
+	}
+
 	// 当前handler阻塞
 	select {} // 阻塞当前handler
 }
