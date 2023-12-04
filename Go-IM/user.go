@@ -73,6 +73,27 @@ func (this *User) DoMessage(msg string) {
 			this.Name = newName                             // 改名字
 			this.SendMsg("老铁，已经改好了，现在你叫：" + newName + "\n") // 发送给当前用户 //注意不是server.BroadCast(this, "xxx")，而是this.SendMsg("xxx")，因为只发给当前用户。
 		}
+	} else if len(msg) >= 4 && msg[:3] == "to " {
+		// 消息格式： to username content
+		// 1. 获取对方的用户名
+		remoteName := strings.Split(msg, " ")[1]
+		if remoteName == "" {
+			this.SendMsg("消息格式不正确，请使用 \"to 用户名 消息内容\"格式\n")
+			return
+		}
+		// 2. 根据用户名得到对方User对象
+		remoteUser, ok := this.server.OnlineMap[remoteName] // OnlineMap里存着对面的User结构体的实例
+		if !ok {
+			this.SendMsg("该用户名不存在\n")
+			return
+		}
+		// 3. 获取消息内容，通过对方的User对象将消息内容发送过去
+		content := strings.Split(msg, " ")[2]
+		if content == "" {
+			this.SendMsg("啥都没写，请重发\n")
+			return
+		}
+		remoteUser.SendMsg("[悄悄话]" + this.Name + "对你说：" + content + " :比心: " + "\n")
 	} else {
 		this.server.BroadCast(this, msg)
 	}
