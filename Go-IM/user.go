@@ -42,8 +42,19 @@ func (this *User) Offline() {
 	// 广播当前用户下线消息
 	this.server.BroadCast(this, "已下线")
 }
+func (this *User) SendMsg(msg string) {
+	this.conn.Write([]byte(msg))
+}
 func (this *User) DoMessage(msg string) {
-	this.server.BroadCast(this, msg)
+	if msg == "who" {
+		for _, user := range this.server.Onlinemap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "在线...\n"
+			this.SendMsg(onlineMsg)
+		}
+
+	} else {
+		this.server.BroadCast(this, msg)
+	}
 }
 
 // 监听当前user channel的方法，一旦有消息，就直接发送给对端客户端。
