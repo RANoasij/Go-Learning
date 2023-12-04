@@ -85,7 +85,7 @@ func (s *Server) Handler(conn net.Conn) { // conn is a socket 套接字作为形
 	for {
 		select {
 		case <-isLive:
-		case <-time.After(time.Second * 30):
+		case <-time.After(time.Second * 600):
 			user.SendMsg("你被踢了")
 			conn.Close()
 			user.Offline()
