@@ -13,7 +13,7 @@ type Server struct {
 	Ip   string
 	Port int
 	// 在线用户的列表
-	Onlinemap map[string]*User // map是一个key-value结构，key是string类型，value是*User类型
+	OnlineMap map[string]*User // map是一个key-value结构，key是string类型，value是*User类型
 	mapLock   sync.RWMutex     // 读写锁 (在sync里有很多锁的实现)
 	// 消息广播的channel
 	Message chan string
@@ -25,7 +25,7 @@ func NewServer(ip string, port int) *Server { //* and &
 		Ip:   ip,
 		Port: port,
 		// 初始化
-		Onlinemap: make(map[string]*User), // 初始化map，make初始化map，make初始化channel
+		OnlineMap: make(map[string]*User), // 初始化map，make初始化map，make初始化channel
 		Message:   make(chan string),
 	}
 	return server
@@ -37,7 +37,7 @@ func (s *Server) ListenMessager() {
 		msg := <-s.Message // 监听管道中的数据，如果有数据，就读取出来，没有数据就阻塞
 		// 将msg发送给全部的在线user
 		s.mapLock.Lock()                  // 加锁 为啥要加锁呢？因为Onlinemap是线程不安全的，所以要加锁。
-		for _, cli := range s.Onlinemap { // cli value, user对象
+		for _, cli := range s.OnlineMap { // cli value, user对象
 			cli.C <- msg // 将msg发送给User(cli)用户的管道发过去，随后User(cli)用户的ListenMessage()方法就会读取到msg。详见user.go
 		}
 		s.mapLock.Unlock() // 解锁
@@ -69,7 +69,7 @@ func (s *Server) Handler(conn net.Conn) { // conn is a socket 套接字作为形
 				return
 			}
 			// 提取用户的消息(去除'\n')
-			msg := string(buffer[:n-1]) // 从buffer中取出用户输入的消息
+			msg := string(buffer[:n-1]) // 从buffer中取出用户输入的消息. 注意这里如果用Windows系统，需要将n-1改成n-2，因为Windows系统的换行符是\r\n，而Linux系统的换行符是\n。拉跨难搞的Windows.
 			// 将得到的消息进行广播
 			user.DoMessage(msg)
 			fmt.Println("用户输入的消息:", msg)

@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 type User struct {
 	Name   string
@@ -29,7 +32,7 @@ func NewUser(conn net.Conn, server *Server) *User {
 func (this *User) Online() {
 	// 用户上线，将用户加入到onlinemap中
 	this.server.mapLock.Lock()              // 加锁
-	this.server.Onlinemap[this.Name] = this // 将用户加入到onlinemap中
+	this.server.OnlineMap[this.Name] = this // 将用户加入到onlinemap中
 	this.server.mapLock.Unlock()            // 解锁
 	// 广播当前用户上线消息
 	this.server.BroadCast(this, "已上线")
@@ -37,7 +40,7 @@ func (this *User) Online() {
 func (this *User) Offline() {
 	// 用户下线，将用户从onlinemap中删除
 	this.server.mapLock.Lock() // 加锁
-	delete(this.server.Onlinemap, this.Name)
+	delete(this.server.OnlineMap, this.Name)
 	this.server.mapLock.Unlock() // 解锁
 	// 广播当前用户下线消息
 	this.server.BroadCast(this, "已下线")
@@ -47,11 +50,24 @@ func (this *User) SendMsg(msg string) {
 }
 func (this *User) DoMessage(msg string) {
 	if msg == "who" {
-		for _, user := range this.server.Onlinemap {
-			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "在线...\n"
-			this.SendMsg(onlineMsg)
+		// 查询当前在线用户有哪些
+		for _, user := range this.server.OnlineMap { //注意这里this是User结构体的实例。this.server就是Server的实例，也就有OnlineMap属性记着用户列表。
+			onlineMsd := "[" + user.Addr + "]" + user.Name + ":" + "在线\n"
+			this.SendMsg(onlineMsd) //注意这里只发送给当前用户，不广播。所以是conn.Write([]byte(msg))写给当前用户User结构体的conn属性。
 		}
-
+	} else if len(msg) >= 7 && msg[:7] == "rename " { //这里还要判断下len(msg) > 6，不然会报错的。
+		newName := strings.Split(msg, " ")[1]     // 通过空格分割，取第二个元素，也就是新名字。
+		_, flag := this.server.OnlineMap[newName] // Go语言里，访问map会返回两个值，第一个是对应的值，第二个是这个key是否存在。这里只要判断第二个值就可以了。
+		if flag {                                 // flag == true
+			this.SendMsg("当前用户名已经被使用\n")
+		} else {
+			this.server.mapLock.Lock()                      // 改之前先上锁。OnlineMap不是线程安全的。
+			delete(this.server.OnlineMap, this.Name)        // 删除原来的名字
+			this.server.OnlineMap[newName] = this           // 加入新名字 //回忆OnlineMap的定义：map[string]*User，也就是 ['名字']: User结构体的实例
+			this.server.mapLock.Unlock()                    // 解锁
+			this.Name = newName                             // 改名字
+			this.SendMsg("老铁，已经改好了，现在你叫：" + newName + "\n") // 发送给当前用户 //注意不是server.BroadCast(this, "xxx")，而是this.SendMsg("xxx")，因为只发给当前用户。
+		}
 	} else {
 		this.server.BroadCast(this, msg)
 	}
