@@ -38,13 +38,18 @@ func (this *User) Online() {
 	this.server.BroadCast(this, "已上线")
 }
 func (this *User) Offline() {
-	// 用户下线，将用户从onlinemap中删除
+	// User goes offline, remove from OnlineMap 	// 用户下线，将用户从onlinemap中删除
 	this.server.mapLock.Lock() // 加锁
 	delete(this.server.OnlineMap, this.Name)
 	this.server.mapLock.Unlock() // 解锁
-	// 广播当前用户下线消息
+	// Broadcast user offline message
 	this.server.BroadCast(this, "已下线")
+	// Safely close the user's message channel
+	if this.C != nil {
+		this.CloseMessageChannel()
+	}
 }
+
 func (this *User) SendMsg(msg string) {
 	this.conn.Write([]byte(msg))
 }
@@ -73,10 +78,18 @@ func (this *User) DoMessage(msg string) {
 	}
 }
 
+// 这里改了个[BUG]，防止用户发送空消息，导致服务器死循环
 // 监听当前user channel的方法，一旦有消息，就直接发送给对端客户端。
 func (a *User) ListenMessage() { //一般最好叫一个别名。不过a和this是一样的。
-	for {
-		msg := <-a.C                     // 监听管道中的数据，如果有数据，就读取出来，没有数据就阻塞
+	for msg := range a.C { // 监听管道中的数据，如果有数据，就读取出来，没有数据就阻塞
 		a.conn.Write([]byte(msg + "\n")) // 转成byte二进制类型，发送给客户端
 	}
+}
+
+// Proper way to close a channel, the key to take away is to set the channel to nil to indicate it's closed
+func (this *User) CloseMessageChannel() {
+	this.server.mapLock.Lock()
+	defer this.server.mapLock.Unlock()
+	close(this.C)
+	this.C = nil // Set the channel to nil to indicate it's closed
 }

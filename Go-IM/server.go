@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -36,6 +37,7 @@ func (s *Server) ListenMessager() {
 	for {
 		msg := <-s.Message // 监听管道中的数据，如果有数据，就读取出来，没有数据就阻塞
 		// 将msg发送给全部的在线user
+		// 需要做一些处理，用户下线后，不能给用户发消息了，不要给关闭的管道发消息。
 		s.mapLock.Lock()                  // 加锁 为啥要加锁呢？因为Onlinemap是线程不安全的，所以要加锁。
 		for _, cli := range s.OnlineMap { // cli value, user对象
 			cli.C <- msg // 将msg发送给User(cli)用户的管道发过去，随后User(cli)用户的ListenMessage()方法就会读取到msg。详见user.go
@@ -54,6 +56,8 @@ func (s *Server) Handler(conn net.Conn) { // conn is a socket 套接字作为形
 	fmt.Println("连接建立成功")
 	user := NewUser(conn, s)
 	user.Online()
+	//监听用户是否活跃的channel管道
+	isLive := make(chan bool)
 	// 接收客户端消息. 需要Read -> block of Socket. 用goroutine来处理，防止阻塞。go func(){}().
 	go func() {
 		defer conn.Close()           // 关闭连接
@@ -72,12 +76,22 @@ func (s *Server) Handler(conn net.Conn) { // conn is a socket 套接字作为形
 			msg := string(buffer[:n-1]) // 从buffer中取出用户输入的消息. 注意这里如果用Windows系统，需要将n-1改成n-2，因为Windows系统的换行符是\r\n，而Linux系统的换行符是\n。拉跨难搞的Windows.
 			// 将得到的消息进行广播
 			user.DoMessage(msg)
+			isLive <- true // 有消息，就将isLive管道中写入true
 			fmt.Println("用户输入的消息:", msg)
 		}
 	}()
 
 	// 当前handler阻塞
-	select {} // 阻塞当前handler
+	for {
+		select {
+		case <-isLive:
+		case <-time.After(time.Second * 30):
+			user.SendMsg("你被踢了")
+			conn.Close()
+			user.Offline()
+			return
+		}
+	}
 }
 
 // 启动服务器的接口
