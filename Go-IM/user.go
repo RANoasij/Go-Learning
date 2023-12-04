@@ -61,7 +61,8 @@ func (this *User) DoMessage(msg string) {
 			this.SendMsg(onlineMsd) //注意这里只发送给当前用户，不广播。所以是conn.Write([]byte(msg))写给当前用户User结构体的conn属性。
 		}
 	} else if len(msg) >= 7 && msg[:7] == "rename " { //这里还要判断下len(msg) > 6，不然会报错的。
-		newName := strings.Split(msg, " ")[1]     // 通过空格分割，取第二个元素，也就是新名字。
+		parts := strings.SplitN(msg, " ", 2)
+		newName := parts[1]                       // 通过空格分割，取第二个元素，也就是新名字。
 		_, flag := this.server.OnlineMap[newName] // Go语言里，访问map会返回两个值，第一个是对应的值，第二个是这个key是否存在。这里只要判断第二个值就可以了。
 		if flag {                                 // flag == true
 			this.SendMsg("当前用户名已经被使用\n")
@@ -76,7 +77,8 @@ func (this *User) DoMessage(msg string) {
 	} else if len(msg) >= 4 && msg[:3] == "to " {
 		// 消息格式： to username content
 		// 1. 获取对方的用户名
-		remoteName := strings.Split(msg, " ")[1]
+		parts := strings.SplitN(msg, " ", 3)
+		remoteName := parts[1]
 		if remoteName == "" {
 			this.SendMsg("消息格式不正确，请使用 \"to 用户名 消息内容\"格式\n")
 			return
@@ -88,7 +90,7 @@ func (this *User) DoMessage(msg string) {
 			return
 		}
 		// 3. 获取消息内容，通过对方的User对象将消息内容发送过去
-		content := strings.Split(msg, " ")[2]
+		content := parts[2]
 		if content == "" {
 			this.SendMsg("啥都没写，请重发\n")
 			return
